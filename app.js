@@ -1,60 +1,48 @@
-var koa = require('koa');
-var app = koa();
-var Router = require('koa-router');
-var session = require('koa-session');
+var app = require('koa')();
+var router = require('koa-router')();
+var logger = require('koa-logger');
+var json = require('koa-json');
+var views = require('koa-views');
+var static = require('koa-static');
 
-var myRouter = new Router();
+var index = require('./routes/index');
 
-//x-response-time
+// Init views
+app.use(views(__dirname + '/views', {
+    map: {
+        html: 'underscore'
+    }
+}));
+
+// Init bodyparser
+app.use(require('koa-bodyparser')());
+
+// Init json
+app.use(json());
+
+// Init logger
+app.use(logger());
 
 app.use(function *(next) {
     var start = new Date;
     yield next;
     var ms = new Date - start;
     this.set('X-Response-Time', ms + 'ms');
-    //logger
     console.log('%s %s - %s', this.method, this.url, ms);
-    console.log(this.res.status);
 });
 
-//router
+// Init static
+app.use(static(__dirname + '/static'));
 
-app.get('/users/:user', function *(next) {
-    this.body = 'Fuck u : ' + this.user;
-}).param('user', function *(id, next) {
-    var users = [ '0号用户', '1号用户', '2号用户'];
-    this.user = users[id];
-    if(!this.user) return this.status = 404;
-    yield next; 
-});
+// Set router
+router.use('/', index.routes(), index.allowedMethods());
 
-app.redirect('/login', 'sign-in');
-//等同于
-app.all('/login', function *() {
-   this.redirect('/sign-in');
-   this.status = 301; 
-});
+// Init routes
+app.use(router.routes());
 
-//Session
-app.keys = ['fuck up all'];
-app.use(session(app));
-
-app.use(function *(){
-    var n = this.session.views || 0;
-    this.session.views = ++n;
-    this.body = n + ' views'; 
-});
-
-
-// app.use(myRouter.routes());
-//error
-
-app.on('error', function(err) {
-    log.error('server error', err);    
-});
-
+// Init error
 app.on('error', function(err, ctx){
-    log.error('server error', err, ctx);
+    logger.error('server error', err, ctx);
 });
 
 var devPort = 3132;
