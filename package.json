@@ -1,0 +1,24 @@
+{
+  "name": "kosa",
+  "version": "1.0.0",
+  "description": "Koa Run",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://git@github.com:sa03/kosa.git"
+  },
+  "keywords": [
+    "Koa",
+    "Nodejs"
+  ],
+  "author": "Sa",
+  "license": "ISC",
+  "devDependencies": {
+    "koa": "^1.2.0",
+    "koa-router": "^5.4.0",
+    "koa-session": "^3.3.1"
+  }
+}
