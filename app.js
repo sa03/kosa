@@ -1,29 +1,35 @@
 var app = require('koa')();
-var router = require('koa-router')();
-var logger = require('koa-logger');
-var json = require('koa-json');
-var views = require('koa-views');
-var static = require('koa-static');
+var config = require('./configs/main');
 
-var index = require('./routes/index');
+app.name = config.name;
+app.keys = config.keys;
+app.env = config.env;
 
-// Init views
-app.use(views(__dirname + '/views', {
-    map: {
-        html: 'underscore'
-    }
-}));
+// if (config.env === 'development')
+//     var debug = require('debug')('kosa');
 
 // Init bodyparser
-app.use(require('koa-bodyparser')());
-
+app.use(require('koa-bodyparser')(config.bodyparser));
+// Init view
+require('koa-ejs')(app, config.view);
+// Init view error
+app.use(require('koa-error-ejs')(config.error));
+// Init static
+app.use(require('koa-static')(config.static.directory, config.static));
 // Init json
-app.use(json());
-
+app.use(require('koa-json')());
 // Init logger
-app.use(logger());
+app.use(require('koa-logger')());
+// Init passport
+// var passport=require('./configs/auth')(app, config.auth)
+// app.use(passport.initialize())
+// app.use(passport.session())
 
-app.use(function *(next) {
+
+// Init routes
+app.use(require('./configs/routes')(app));
+
+app.use(function* (next) {
     var start = new Date;
     yield next;
     var ms = new Date - start;
@@ -31,20 +37,10 @@ app.use(function *(next) {
     console.log('%s %s - %s', this.method, this.url, ms);
 });
 
-// Init static
-app.use(static(__dirname + '/static'));
-
-// Set router
-router.use('/', index.routes(), index.allowedMethods());
-
-// Init routes
-app.use(router.routes());
-
-// Init error
-app.on('error', function(err, ctx){
-    logger.error('server error', err, ctx);
-});
-
-var devPort = 3132;
-app.listen(devPort);
-console.log('listening on port ' + devPort);
+if (!module.parent) {
+    app.listen(config.port || 3000, function () {
+        console.log('Server running on port ' + config.port || 3000)
+    })
+} else {
+    module.exports = app
+}
